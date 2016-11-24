@@ -94,16 +94,13 @@ class SpiderCtrl(object):
 
             soup = BeautifulSoup(html_cont, 'html.parser', from_encoding='utf-8')
             # print soup.original_encoding
-            # print chardet.detect(html_cont)['encoding']
-
             nodes = soup.find_all('div', class_=re.compile(r"comment"))
+
+            comment_list = []
             for node in nodes:
                 node_content = node.find('p', class_='content')
-                # print str(node_content.contents).replace("\t", '')#decode("unicode-escape")
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
-                print comment
-
-                break
+                comment_list.append(comment)
 
 
 if __name__ == "__main__":
