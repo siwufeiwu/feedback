@@ -11,6 +11,8 @@ import urlparse
 import urllib2
 import urllib
 import chardet
+import time
+import datetime
 from bs4 import BeautifulSoup
 from ConfigCtrl import ConfigCtrl
 
@@ -98,9 +100,12 @@ class SpiderCtrl(object):
             for node in nodes:
                 node_content = node.find('p', class_='content')
                 node_sub = node.find('p', class_='sub').find_all('span')
-                phone = str(node_sub[1].contents)
-                print phone
+                contact = str(node_sub[1].contents).lstrip('[').rstrip(']')
+                model = str(node_sub[3].contents).lstrip('[').rstrip(']')
+                ctime = str(node_sub[4].contents).lstrip('[').rstrip(']').replace('u', '').replace("'", '')
+                ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
+                print contact, model, ctime
                 comment_list.append(comment)
 
 
