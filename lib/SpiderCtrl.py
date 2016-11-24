@@ -13,6 +13,8 @@ import urllib
 import chardet
 import time
 import datetime
+import MySQLdb
+from MySQLdb import converters
 from bs4 import BeautifulSoup
 from ConfigCtrl import ConfigCtrl
 
@@ -22,6 +24,19 @@ class SpiderCtrl(object):
     def __init__(self, conf_file = None):
         self.root_path = os.path.dirname(os.path.dirname(__file__))
         self.cfgctrl = ConfigCtrl()
+        conv = converters.conversions.copy()
+        conv[246] = float    # convert decimals to floats
+        conv[12] = str       # convert datetime to strings
+        self.db = MySQLdb.connect(
+            connect_timeout=20,
+            host=self.cfgctrl.get_config('mysql', 'mysql_host'),
+            port=int(self.cfgctrl.get_config('mysql', 'mysql_port')),
+            user=self.cfgctrl.get_config('mysql', 'mysql_user'),
+            passwd=self.cfgctrl.get_config('mysql', 'mysql_password'),
+            db=self.cfgctrl.get_config('mysql', 'mysql_database'),
+            charset=self.cfgctrl.get_config('mysql', 'mysql_charset'),
+            conv=conv)
+
 
     def request(self, method, url, data=None, retry=2):
         if not url or not method:
@@ -93,14 +108,26 @@ class SpiderCtrl(object):
                 contact = str(node_sub[1].contents).lstrip('[').rstrip(']').decode('unicode-escape')
                 model = str(node_sub[3].contents).lstrip('[').rstrip(']').decode('unicode-escape')
                 ctime = str(node_sub[4].contents).lstrip('[').rstrip(']').replace('u', '').replace("'", '')
-                ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
+                # ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
+                ctime = int(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple()))
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
                 iterm['contact'] = contact
                 iterm['mode'] = model
                 iterm['ctime'] = ctime
                 iterm['comment'] = comment
                 print iterm
+                cursor = self.db.cursor()
+                cursor.execute("show status;")
+                # print cursor.fetchall()
+                sql = "insert into comment (`date`, `comment`) values ( '%d', '%s') " % (ctime, comment)
+                print sql
+                cursor.execute(sql)
+                self.db.commit()
+                self.db.close()
+                # ret = cursor.execute('insert into comment (date, comment) values (%d, %s)' ,ctime, comment))
+
                 comment_list.append(iterm)
+                break
 
 
 if __name__ == "__main__":

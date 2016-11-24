@@ -21,11 +21,11 @@ from handler.IndexHandler import IndexHandler
 
 # define("port", default=8000, type=int, help='run on the given port')
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)s %(levelname)s %(filename)s %(funcName)s %(lineno)d %(message)s',
-                    datefmt='%m-%d %H:%M:%S',
-                    filename='app.log',
-                    filemode='a')
+# logging.basicConfig(level=logging.DEBUG,
+#                     format='%(asctime)s %(name)s %(levelname)s %(filename)s %(funcName)s %(lineno)d %(message)s',
+#                     datefmt='%m-%d %H:%M:%S',
+#                     filename='app.log',
+#                     filemode='a')
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -43,14 +43,15 @@ class Application(tornado.web.Application):
 
         self.cfg = ConfigCtrl()
         self.db = torndb.Connection(
-            host = self.cfg.get_config('mysql', 'mysql_host'),
+            host = self.cfg.get_config('mysql', 'mysql_host') + ':' + self.cfg.get_config('mysql', 'mysql_port'),
             user = self.cfg.get_config('mysql', 'mysql_user'),
             database = self.cfg.get_config('mysql', 'mysql_database'),
             password = self.cfg.get_config('mysql', 'mysql_password')
         )
 
 if __name__ == '__main__':
-    http_server = tornado.httpserver.HTTPServer(Application())
+    app = Application()
+    http_server = tornado.httpserver.HTTPServer(app)
     # tornado.options.parse_command_line()
     # http_server.listen(options.port)
     http_server.listen(9000)
