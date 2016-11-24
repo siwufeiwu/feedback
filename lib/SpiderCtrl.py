@@ -23,7 +23,7 @@ from ConfigCtrl import ConfigCtrl
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(asctime)s] [%(name)s] [%(levelname)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    filename='../log/spider.log',
+                    filename=os.path.join(os.path.dirname(os.getcwd()), 'log' + os.path.sep + 'spider.log'),
                     filemode='a')
 
 class SpiderCtrl(object):
@@ -92,7 +92,9 @@ class SpiderCtrl(object):
 
         new_urls = set()
         limit, count = 710, 1
-        root_url = 'http://appstore.huawei.com/comment/commentAction.action?appId=C6092&appName=书旗小说&_page='
+        #root_url = 'http://appstore.huawei.com/comment/commentAction.action?appId=C6092&appName=书旗小说&_page='
+        root_url = self.cfgctrl.get_config('market', 'huawei_root_url')
+
         new_urls.add(root_url + str(count))
 
         while len(new_urls) != 0 and count <= limit:
