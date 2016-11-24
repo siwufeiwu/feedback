@@ -13,10 +13,18 @@ import urllib
 import chardet
 import time
 import datetime
+import logging
 import MySQLdb
 from MySQLdb import converters
 from bs4 import BeautifulSoup
 from ConfigCtrl import ConfigCtrl
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] [%(name)s] [%(levelname)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    filename='../log/spider.log',
+                    filemode='a')
 
 class SpiderCtrl(object):
     """docstring for AgentCtrl"""
@@ -49,7 +57,7 @@ class SpiderCtrl(object):
         }
         while retry != 0:
             if method == 'GET':
-                req = urllib2.Request(url + '?' + urllib.urlencode(data))
+                req = urllib2.Request(url)
             elif method == 'POST':
                 url_value = urllib.urlencode(data)
                 req = urllib2.Request(url, data=url_value)
@@ -83,51 +91,46 @@ class SpiderCtrl(object):
             return True
 
         new_urls = set()
-        old_urls = set()
-        limit, count = 0, 0
-        root_url = 'http://appstore.huawei.com/comment/commentAction.action'
-        data = {
-            'appId':'C6092',
-            'appName':'书旗小说',
-            '_page':1
-        }
-        new_urls.add(root_url)
+        limit, count = 710, 1
+        root_url = 'http://appstore.huawei.com/comment/commentAction.action?appId=C6092&appName=书旗小说&_page='
+        new_urls.add(root_url + str(count))
 
-        while len(new_urls) != 0:
-            html_cont = self.request('GET', new_urls.pop(), data)
-            # print html_cont
+        while len(new_urls) != 0 and count <= limit:
+            old_url = new_urls.pop()
+            logging.info(old_url)
+            html_cont = self.request('GET', old_url)
             soup = BeautifulSoup(html_cont, 'html.parser', from_encoding='utf-8')
-            # print soup.original_encoding
+            #print soup.original_encoding
             nodes = soup.find_all('div', class_=re.compile(r"comment"))
 
-            comment_list = []
             for node in nodes:
-                iterm = {}
                 node_content = node.find('p', class_='content')
                 node_sub = node.find('p', class_='sub').find_all('span')
-                contact = str(node_sub[1].contents).lstrip('[').rstrip(']').decode('unicode-escape')
-                model = str(node_sub[3].contents).lstrip('[').rstrip(']').decode('unicode-escape')
+                name = str(node_sub[1].contents).lstrip('[').rstrip(']').decode('unicode-escape').replace("'", '').replace('u', '')
+                model = str(node_sub[3].contents).lstrip('[').rstrip(']').decode('unicode-escape').replace("'", '').replace('u', '')
                 ctime = str(node_sub[4].contents).lstrip('[').rstrip(']').replace('u', '').replace("'", '')
-                # ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
-                ctime = int(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple()))
-                comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
-                iterm['contact'] = contact
-                iterm['mode'] = model
-                iterm['ctime'] = ctime
-                iterm['comment'] = comment
-                print iterm
-                cursor = self.db.cursor()
-                cursor.execute("show status;")
-                # print cursor.fetchall()
-                sql = "insert into comment (`date`, `comment`) values ( '%d', '%s') " % (ctime, comment)
-                print sql
-                cursor.execute(sql)
-                self.db.commit()
-                self.db.close()
-                # ret = cursor.execute('insert into comment (date, comment) values (%d, %s)' ,ctime, comment))
-
-                comment_list.append(iterm)
-                break
+                ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
+                comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape').replace("'", '').replace('u', '').replace('\\', '').replace('"', '')
+                #preg = re.compile(r'[^\u4e00-\u9fa5a-zA-Z0-9\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）]')
+                #preg = re.compile(u'\U00010000-\U0010ffff')
+                preg = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
+                name = preg.sub('', unicode(name))
+                comment = preg.sub('', unicode(comment))
+                model = re.sub(r'<a href="http://appstore.hawei.com:80/">', '', model)
+                model = re.sub(r'</a>', '', model)
+                try:
+                    cursor = self.db.cursor()
+                    sql = 'insert into comment (`source`, `app`, `comment_time`, `comment`, `name`, `model`) values (4, 1, "%s", "%s", "%s", "%s") ' % (ctime, comment, name, model)
+                    logging.debug(sql)
+                    cursor.execute(sql)
+                    self.db.commit()
+                except MySQLdb.Error, e:
+                    logging.error(str(e))
+                    self.db.rollback()
+                count += 1
+            
+            new_urls.add(root_url + str(int(old_url.split('=')[len(old_url.split('=')) - 1]) + 1))
+        self.db.close()
 
 
 if __name__ == "__main__":

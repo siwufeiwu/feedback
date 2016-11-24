@@ -24,7 +24,7 @@ from handler.IndexHandler import IndexHandler
 # logging.basicConfig(level=logging.DEBUG,
 #                     format='%(asctime)s %(name)s %(levelname)s %(filename)s %(funcName)s %(lineno)d %(message)s',
 #                     datefmt='%m-%d %H:%M:%S',
-#                     filename='app.log',
+#                     filename='./log/app.log',
 #                     filemode='a')
 
 class Application(tornado.web.Application):
