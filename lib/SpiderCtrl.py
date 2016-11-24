@@ -89,9 +89,7 @@ class SpiderCtrl(object):
 
         while len(new_urls) != 0:
             html_cont = self.request('POST', new_urls.pop(), data)
-            print html_cont
-            # print self.handleHtmlEncoding(html_cont)
-
+            # print html_cont
             soup = BeautifulSoup(html_cont, 'html.parser', from_encoding='utf-8')
             # print soup.original_encoding
             nodes = soup.find_all('div', class_=re.compile(r"comment"))
@@ -99,6 +97,9 @@ class SpiderCtrl(object):
             comment_list = []
             for node in nodes:
                 node_content = node.find('p', class_='content')
+                node_sub = node.find('p', class_='sub').find_all('span')
+                phone = str(node_sub[1].contents)
+                print phone
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
                 comment_list.append(comment)
 
