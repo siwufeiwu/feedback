@@ -87,6 +87,7 @@ class SpiderCtrl(object):
 
             comment_list = []
             for node in nodes:
+                iterm = {}
                 node_content = node.find('p', class_='content')
                 node_sub = node.find('p', class_='sub').find_all('span')
                 contact = str(node_sub[1].contents).lstrip('[').rstrip(']').decode('unicode-escape')
@@ -94,8 +95,12 @@ class SpiderCtrl(object):
                 ctime = str(node_sub[4].contents).lstrip('[').rstrip(']').replace('u', '').replace("'", '')
                 ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.mktime(datetime.datetime.strptime(ctime,"%Y-%m-%d %H:%M").timetuple())))
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape')
-                print contact, model, ctime
-                comment_list.append(comment)
+                iterm['contact'] = contact
+                iterm['mode'] = model
+                iterm['ctime'] = ctime
+                iterm['comment'] = comment
+                print iterm
+                comment_list.append(iterm)
 
 
 if __name__ == "__main__":
