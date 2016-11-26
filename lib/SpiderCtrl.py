@@ -91,7 +91,7 @@ class SpiderCtrl(object):
             return True
 
         new_urls = set()
-        limit, count = 710, 1
+        limit, count = 1, 1
         #root_url = 'http://appstore.huawei.com/comment/commentAction.action?appId=C6092&appName=书旗小说&_page='
         root_url = self.cfgctrl.get_config('market', 'huawei_root_url')
 
@@ -104,6 +104,9 @@ class SpiderCtrl(object):
             soup = BeautifulSoup(html_cont, 'html.parser', from_encoding='utf-8')
             #print soup.original_encoding
             nodes = soup.find_all('div', class_=re.compile(r"comment"))
+            node_total = soup.find_all('span', class_=re.compile(r"title"))
+            total = str(node_total[0].contents).lstrip('[').rstrip(']').decode('unicode-escape')
+            limit = int(re.findall(r"\d+", total)[0])
 
             for node in nodes:
                 node_content = node.find('p', class_='content')
