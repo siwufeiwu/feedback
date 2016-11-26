@@ -13,38 +13,22 @@ import urllib
 import chardet
 import time
 import datetime
-import logging
-import MySQLdb
-from MySQLdb import converters
+
 from bs4 import BeautifulSoup
 from ConfigCtrl import ConfigCtrl
+from LogCtrl import LogCtrl
+from MysqlCtrl import MysqlCtrl
 
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] [%(name)s] [%(levelname)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    filename=os.path.join(os.path.dirname(os.getcwd()), 'log' + os.path.sep + 'spider.log'),
-                    filemode='a')
 
 class SpiderCtrl(object):
     """docstring for AgentCtrl"""
 
     def __init__(self, conf_file = None):
         self.root_path = os.path.dirname(os.path.dirname(__file__))
-        self.cfgctrl = ConfigCtrl()
-        conv = converters.conversions.copy()
-        conv[246] = float    # convert decimals to floats
-        conv[12] = str       # convert datetime to strings
-        self.db = MySQLdb.connect(
-            connect_timeout=20,
-            host=self.cfgctrl.get_config('mysql', 'mysql_host'),
-            port=int(self.cfgctrl.get_config('mysql', 'mysql_port')),
-            user=self.cfgctrl.get_config('mysql', 'mysql_user'),
-            passwd=self.cfgctrl.get_config('mysql', 'mysql_password'),
-            db=self.cfgctrl.get_config('mysql', 'mysql_database'),
-            charset=self.cfgctrl.get_config('mysql', 'mysql_charset'),
-            conv=conv)
-
+        self.cfgctrl = ConfigCtrl(conf_file)
+        self.mysql = MysqlCtrl()
+        self.connect = self.mysql.connect()
+        self.log = LogCtrl().getLog()
 
     def request(self, method, url, data=None, retry=2):
         if not url or not method:
@@ -92,14 +76,12 @@ class SpiderCtrl(object):
 
         new_urls = set()
         limit, count = 1, 1
-        #root_url = 'http://appstore.huawei.com/comment/commentAction.action?appId=C6092&appName=书旗小说&_page='
         root_url = self.cfgctrl.get_config('market', 'huawei_root_url')
-
         new_urls.add(root_url + str(count))
 
         while len(new_urls) != 0 and count <= limit:
             old_url = new_urls.pop()
-            logging.info(old_url)
+            self.log.info(old_url)
             html_cont = self.request('GET', old_url)
             soup = BeautifulSoup(html_cont, 'html.parser', from_encoding='utf-8')
             #print soup.original_encoding
@@ -123,19 +105,15 @@ class SpiderCtrl(object):
                 comment = preg.sub('', unicode(comment))
                 model = re.sub(r'<a href="http://appstore.hawei.com:80/">', '', model)
                 model = re.sub(r'</a>', '', model)
-                try:
-                    cursor = self.db.cursor()
-                    sql = 'insert into comment (`source`, `app`, `comment_time`, `comment`, `name`, `model`) values (4, 1, "%s", "%s", "%s", "%s") ' % (ctime, comment, name, model)
-                    logging.debug(sql)
-                    cursor.execute(sql)
-                    self.db.commit()
-                except MySQLdb.Error, e:
-                    logging.error(str(e))
-                    self.db.rollback()
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `comment`, `name`, `model`) values (4, 1, "%s", "%s", "%s", "%s") ' % (ctime, comment, name, model)
+                self.log.debug(sql)
+                if self.mysql.insert(sql) is None:
+                    self.log.error('mysql insert failed')
                 count += 1
-            
+
             new_urls.add(root_url + str(int(old_url.split('=')[len(old_url.split('=')) - 1]) + 1))
-        self.db.close()
+        self.log.info('华为应用市场当前评论总数为'+ str(limit))
+        self.connect.close()
 
 
 if __name__ == "__main__":
