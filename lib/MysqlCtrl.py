@@ -61,5 +61,21 @@ class MysqlCtrl(object):
             self.connect.rollback()
             return  None
 
+    def getAllRecord(self, sql):
+        res_arr = []
+        cursor = self.connect.cursor()
+        cursor.execute(sql)
+        for row in cursor.fetchall():
+            res = {}
+            i = 0
+            for field_desc in cursor.description:
+                res[field_desc[0]] = row[i]
+                i += 1
+            res_arr.append(res)
+        return res_arr
+
+
+
+
     def destroy(self):
         self.connect.close()
