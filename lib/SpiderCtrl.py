@@ -81,10 +81,10 @@ class SpiderCtrl(object):
         else:
             return html_cont.decode(org_type, 'ignore').encode(dist_type)
 
-    def crawHuaWeiMacket(self, switch = True):
+    def crawHuaWeiMacket(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
-        root_url = self.cfgctrl.get_config('market', 'huawei_root_url')
+        root_url = self.cfgctrl.get_config(app, 'huawei_root_url')
         new_urls.add(root_url + str(count))
 
         while len(new_urls) != 0:
@@ -110,26 +110,26 @@ class SpiderCtrl(object):
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
                 comment = str(node_content.contents).lstrip('[').rstrip(']').replace('\\r', '').replace('\\n', '').replace('\\t', '').decode('unicode-escape').replace("'", '').replace('u', '').replace('\\', '').replace('"', '')
-                #preg = re.compile(r'[^\u4e00-\u9fa5a-zA-Z0-9\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）]')
+                #preg = re.compile(r'[^\u4e00-\u9fa5a-zA-Z0-9\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#��?%…���??&*（）]')
                 #preg = re.compile(u'\U00010000-\U0010ffff')
                 preg = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
                 name = preg.sub('', unicode(name))
                 comment = preg.sub('', unicode(comment))
                 model = re.sub(r'<a href="http://appstore.hawei.com:80/">', '', model)
                 model = re.sub(r'</a>', '', model)
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `model`, `date`) values ("%s", 1, "%s", "%s", "%s", "%s", "%s") ' % (u'华为应用市场', ctime, comment, name, model, date)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `model`, `date`) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s") ' % (u'华为应用市场', str(app), ctime, comment, name, model, date)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
                 count += 1
 
             new_urls.add(root_url + str(int(old_url.split('=')[len(old_url.split('=')) - 1]) + 1))
-        self.log.info('华为应用市场爬取评论数为:%s' % (str(count)))
+        self.log.info('华为应用市场爬取[%s]评论数为:%s' % ( str(app), str(count)))
 
-    def crawBdShouJiZhuShouMacket(self, switch = True):
+    def crawBdShouJiZhuShouMacket(self, app = 'shuqi', switch = True):
         new_urls = set()
         count = 1
-        root_url = self.cfgctrl.get_config('market', 'baidushoujizhushou_root_url')
+        root_url = self.cfgctrl.get_config(app, 'baidushoujizhushou_root_url')
         new_urls.add(root_url + str(count))
 
         while len(new_urls) != 0:
@@ -155,19 +155,19 @@ class SpiderCtrl(object):
                     continue
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`) values ("%s", 1, "%s", "%s", "%s", "%s") ' % (u'百度手机助手',ctime, comment, name, date)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`) values ("%s", "%s", "%s", "%s", "%s", "%s") ' % (u'百度手机助手', str(app), ctime, comment, name, date)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
                 count += 1
 
             new_urls.add(root_url + str(int(old_url.split('=')[len(old_url.split('=')) - 1]) + 1))
-        self.log.info('百度手机助手应用市场爬取评论数为:%s' % (str(count)))
+        self.log.info('百度手机助手应用市场爬取[%s]评论数为:%s' % ( str(app), str(count)))
 
-    def crawWanDouJia(self, switch = True):
+    def crawWanDouJia(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
-        root_url = self.cfgctrl.get_config('market', 'wandoujia_root_url')
+        root_url = self.cfgctrl.get_config(app, 'wandoujia_root_url')
         new_urls.add(root_url + str(count))
 
         while len(new_urls) != 0:
@@ -199,19 +199,19 @@ class SpiderCtrl(object):
                     continue
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`) values ("%s", 1, "%s", "%s", "%s", "%s") ' % (u'豌豆荚',ctime, comment, name, date)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`) values ("%s", "%s", "%s", "%s", "%s", "%s") ' % (u'豌豆��?', str(app), ctime, comment, name, date)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
                 count += 1
 
             new_urls.add(root_url + str(int(old_url.split('comment')[len(old_url.split('comment')) - 1]) + 1))
-        self.log.info('豌豆荚应用市场爬取评论数为:%s' % (str(count)))
+        self.log.info('豌豆荚应用市场爬取[%s]评论:%s' % (str(app),  str(count)))
 
-    def crawYingYongBao(self, switch = True):
+    def crawYingYongBao(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
-        root_url = self.cfgctrl.get_config('market', 'yingyongbao_root_url')
+        root_url = self.cfgctrl.get_config(app, 'yingyongbao_root_url')
         new_urls.add(root_url)
 
         while len(new_urls) != 0:
@@ -236,34 +236,39 @@ class SpiderCtrl(object):
                 score = node['score']
                 ctime = node['createdTime']
                 if (not switch ) and (int(ctime) < int(time.time() - self.day*24*60*60)):
-                    self.log.info('应用宝爬取评论数为:%s' % (str(count)))
-                    continue
+                    self.log.info('应用宝爬取[%s]评论:%s' % ( str(app), str(count)))
+                    return
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
                 preg = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
                 name = preg.sub('', unicode(name))
                 content = preg.sub('', unicode(content))
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `comment_level`) values ("%s", 1, "%s", "%s", "%s", "%s", "%d") ' % (u'应用宝', ctime, content, name, date, score)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `comment_level`) values ("%s", "%s", "%s", "%s", "%s", "%s", "%d") ' % (u'应用��?', str(app), ctime, content, name, date, score)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
                 count += 1
 
             new_urls.add(root_url + next_param)
-        self.log.info('应用宝爬取评论数为:%s' % (str(count)))
+        self.log.info('应用宝爬取[%s]评论��?:%s' % ( str(app), str(count)))
 
-    def craw360(self, switch = True):
+    def craw360(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
         data = {
             'callback':'jQuery172014259591416684492_1479436591868',
-            'baike':'书旗免费小说',
             'c':'message',
             'a':'getmessage',
             'start':0,
             'count':10
         }
-        root_url = self.cfgctrl.get_config('market', '360_root_url')
+
+        if app == 'shuqi':
+            data['baike'] = '书旗免费小说'
+        else:
+            data['baike'] = 'iReader'
+
+        root_url = self.cfgctrl.get_config(app, '360_root_url')
         new_urls.add(root_url)
 
         while len(new_urls) != 0:
@@ -289,7 +294,7 @@ class SpiderCtrl(object):
                 ctime = time.mktime(time.strptime(ctime,'%Y-%m-%d %H:%M:%S'))
                 model = node['model']
                 if (not switch ) and (int(ctime) < int(time.time() - self.day*24*60*60)):
-                    self.log.info('360手机助手爬取评论数为:%s' % (str(count)))
+                    self.log.info('360手机助手爬取[%s]评论数为:%s' % (str(app),  str(count)))
                     return
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
@@ -297,25 +302,30 @@ class SpiderCtrl(object):
                 name = preg.sub('', unicode(name))
                 model = preg.sub('', unicode(model))
                 content = preg.sub('', unicode(content))
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `comment_level`, `model`) values ("%s", 1, "%s", "%s", "%s", "%s", "%d", "%s") ' % (u'360手机助手', ctime, content, name, date, score, model)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `comment_level`, `model`) values ("%s", "%s", "%s", "%s", "%s", "%s", "%d", "%s") ' % (u'360手机助手', str(app), ctime, content, name, date, score, model)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
                 count += 1
             data['start'] += 10
             new_urls.add(root_url)
-        self.log.info('360手机助手爬取评论数为:%s' % (str(count)))
+        self.log.info('360手机助手爬取[%s]评论数为:%s' % ( str(app), str(count)))
 
-    def crawOppo(self, switch = True):
+    def crawOppo(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
         page_total = 1
         page_curr = 1
         data = {
-            'id':10618969,
             'page':1
         }
-        root_url = self.cfgctrl.get_config('market', 'oppo_root_url')
+
+        if app == 'shuqi':
+            data['id'] = 10618969
+        else:
+            data['id'] = 10634088
+
+        root_url = self.cfgctrl.get_config(app, 'oppo_root_url')
         new_urls.add(root_url)
 
         while len(new_urls) != 0 and page_curr <= page_total:
@@ -339,7 +349,7 @@ class SpiderCtrl(object):
                 ctime = node['createDate']
                 ctime = time.mktime(time.strptime(ctime.replace('.', '-') + ' 12:00:00','%Y-%m-%d %H:%M:%S'))
                 if (not switch ) and (int(ctime) < int(time.time() - self.day*24*60*60)):
-                    self.log.info('oppo应用市场爬取评论数为:%s' % (str(count)))
+                    self.log.info('oppo应用市场爬取[%s]评论数为:%s' % (str(app),  str(count)))
                     return
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
@@ -347,7 +357,7 @@ class SpiderCtrl(object):
                 name = preg.sub('', unicode(name))
                 content = preg.sub('', unicode(content))
                 model = preg.sub('', unicode(model))
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `model`, `version`) values (u"%s", 1, "%s", "%s", "%s", "%s", "%s", "%s") ' % (u'oppo应用商店', ctime, content, name, date, model, version)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `model`, `version`) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s") ' % (u'oppo应用商店', str(app), ctime, content, name, date, model, version)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
@@ -355,17 +365,22 @@ class SpiderCtrl(object):
 
             data['page'] += 1
             new_urls.add(root_url)
-        self.log.info('oppo应用市场爬取评论数为:%s' % (str(count)))
+        self.log.info('oppo应用市场爬取[%s]评论数为:%s' % (str(app),  str(count)))
 
-    def crawMeiZu(self, switch = True):
+    def crawMeiZu(self, app='shuqi', switch = True):
         new_urls = set()
         count = 1
         data = {
-            'app_id':254019,
             'start':0,
             'max':10
         }
-        root_url = self.cfgctrl.get_config('market', 'meizu_root_url')
+
+        if app == 'shuqi':
+            data['app_id'] = 254019
+        else:
+            data['app_id'] = 1848956
+
+        root_url = self.cfgctrl.get_config(app, 'meizu_root_url')
         new_urls.add(root_url)
         h = HTMLParser.HTMLParser()
 
@@ -390,14 +405,14 @@ class SpiderCtrl(object):
                 ctime = node['create_time']
                 ctime = time.mktime(time.strptime(ctime + ' 12:00:00','%Y-%m-%d %H:%M:%S'))
                 if (not switch ) and (int(ctime) < int(time.time() - self.day*24*60*60)):
-                    self.log.info('魅族应用市场爬取评论数为:%s' % (str(count)))
+                    self.log.info('魅族应用市场爬取[%s]评论数为:%s' % (str(app),  str(count)))
                     return
                 ctime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(ctime)))
                 date = ctime.split()[0]
                 preg = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
                 name = preg.sub('', unicode(name))
                 content = preg.sub('', unicode(content))
-                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `version`) values ("%s", 1, "%s", "%s", "%s", "%s", "%s") ' % (u'魅族应用商店', ctime, content, name, date, version)
+                sql = 'insert into comment (`source`, `app`, `comment_time`, `content`, `name`, `date`, `version`) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s") ' % (u'魅族应用商店',  str(app), ctime, content, name, date, version)
                 self.log.info(sql)
                 if self.mysql.insert(sql) is None:
                     self.log.error('mysql insert failed')
@@ -405,7 +420,7 @@ class SpiderCtrl(object):
 
             data['start'] += 10
             new_urls.add(root_url)
-        self.log.info('魅族应用市场爬取评论数为:%s' % (str(count)))
+        self.log.info('魅族应用市场爬取[%s]评论数为:%s' % (str(app), str(count)))
 
 
 
@@ -413,11 +428,20 @@ class SpiderCtrl(object):
 if __name__ == "__main__":
     spider = SpiderCtrl()
     spider.mysql.connect()
-    # spider.crawBdShouJiZhuShouMacket(switch=False)
-    spider.crawHuaWeiMacket(switch=False)
-    # spider.crawWanDouJia(switch=False)
-    # spider.crawYingYongBao(switch=False)
-    # spider.craw360(switch=False) #403
-    # spider.crawOppo(switch=False)
-    # spider.crawMeiZu(switch=False)
+    for app in ['shuqi', 'zhangyue']:
+        try:
+            spider.crawHuaWeiMacket(app=app, switch=False)
+            spider.crawBdShouJiZhuShouMacket(app=app, switch=False)
+            spider.crawWanDouJia(app=app, switch=False)
+            spider.crawYingYongBao(app=app, switch=False)
+            spider.craw360(app=app, switch=False) #403
+            spider.crawOppo(app=app, switch=False)
+            spider.crawMeiZu(app=app, switch=False)
+            spider.log.info("%s craw all market done" % app)
+            time.sleep(5)
+        except Exception as e:
+            spider.log.error("========================================")
+            spider.log.error("spider has occued a error")
+            time.sleep(5)
+            continue
     spider.mysql.destroy()

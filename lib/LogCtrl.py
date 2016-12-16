@@ -10,6 +10,7 @@ import os
 import sys
 
 log_path = os.path.join(os.path.dirname(os.getcwd()), 'log')
+print log_path
 log_path = os.path.abspath(log_path)
 if log_path not in sys.path:
     sys.path.append(log_path)
